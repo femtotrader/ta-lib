@@ -1,0 +1,40 @@
+sudo: false
+
+language: python
+
+env:
+  - PYTHON=3.4 PANDAS=0.17.1
+  - PYTHON=3.5 PANDAS=0.17.1
+  - PYTHON=2.7 PANDAS=0.17.1
+
+install:
+  - pip install -qq flake8
+  # You may want to periodically update this, although the conda update
+  # conda line below will keep everything up-to-date.  We do this
+  # conditionally because it saves us some downloading if the version is
+  # the same.
+  - if [[ "$PYTHON" == "2.7" ]]; then
+      wget http://repo.continuum.io/miniconda/Miniconda-3.4.2-Linux-x86_64.sh -O miniconda.sh;
+    else
+      wget http://repo.continuum.io/miniconda/Miniconda3-3.4.2-Linux-x86_64.sh -O miniconda.sh;
+    fi
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda config --add channels pandas
+  - conda update -q conda
+  # Useful for debugging any issues with conda
+  - conda info -a
+  - conda create -q -n test-environment python=$PYTHON pandas=$PANDAS nose coverage setuptools
+  - source activate test-environment
+  - pip install coveralls --quiet
+  - conda list
+  - python setup.py install
+
+script:
+    - flake8 --ignore E501 talib
+    - nosetests -v --with-coverage --cover-package=talib
+
+after_success:
+  - coveralls
